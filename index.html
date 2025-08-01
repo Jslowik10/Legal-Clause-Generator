@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Legal Clause Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 900px;
+            padding: 2rem;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem;
+        }
+        textarea, input[type="text"], input[type="date"] {
+            min-height: 120px;
+            resize: vertical;
+        }
+        #output-area {
+            min-height: 200px;
+            background-color: #f9fafb;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: #4b5563;
+            overflow-y: auto;
+        }
+        .disclaimer-box {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            color: #92400e;
+            font-size: 0.875rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-top: 1rem;
+        }
+        .message-box {
+            border-radius: 0.75rem;
+            padding: 1rem;
+            font-weight: 600;
+            display: none;
+            transition: opacity 0.3s ease;
+        }
+        .message-box.pro {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .message-box.limit {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .message-box.warning {
+            background-color: #fffbeb;
+            color: #b45309;
+        }
+        .loading-indicator {
+            display: none;
+        }
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #10b981;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            .card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-2">AI Legal Clause Generator</h1>
+        <p class="text-xl text-center text-gray-600 mb-8">Create professional legal clauses instantly.</p>
+
+        <div class="card w-full">
+            <!-- Additional Information Section -->
+            <div class="mb-6">
+                <h2 class="text-lg font-bold text-gray-700 mb-4">Additional Information (Optional)</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="company-name" class="block text-gray-700 font-medium mb-1">Your Company Name:</label>
+                        <input type="text" id="company-name" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors" placeholder="e.g., 'Creative Solutions Inc.'">
+                    </div>
+                    <div>
+                        <label for="client-name" class="block text-gray-700 font-medium mb-1">Client Name:</label>
+                        <input type="text" id="client-name" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors" placeholder="e.g., 'Acme Corp.'">
+                    </div>
+                    <div>
+                        <label for="effective-date" class="block text-gray-700 font-medium mb-1">Effective Date:</label>
+                        <input type="date" id="effective-date" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Input Section -->
+            <div class="mb-6">
+                <label for="clause-prompt" class="block text-gray-700 font-semibold mb-2">Describe the legal clause you need:</label>
+                <textarea id="clause-prompt" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors" placeholder="e.g., 'A confidentiality clause for a freelance contract.' or 'A payment terms clause for a project-based agreement.'"></textarea>
+            </div>
+
+            <!-- Output Section -->
+            <div class="mb-6">
+                <label class="block text-gray-700 font-semibold mb-2">Generated Clause:</label>
+                <div id="output-area" class="w-full text-gray-600 border-2 border-gray-300 rounded-xl">
+                    <p class="text-gray-400">Your generated clause will appear here.</p>
+                </div>
+                <!-- Permanent Legal Disclaimer -->
+                <div class="disclaimer-box mt-4">
+                    <p class="font-bold">Disclaimer:</p>
+                    <p>This content is for informational purposes only and does not constitute legal advice. It is highly recommended that you consult with a qualified attorney to review and customize any legal documents for your specific needs.</p>
+                </div>
+            </div>
+
+            <!-- Message Box for Freemium Model -->
+            <div id="message-box" class="message-box my-4"></div>
+
+            <!-- Buttons and Loading Indicator -->
+            <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <button id="generate-btn" class="w-full sm:w-auto px-6 py-3 bg-green-500 text-white font-bold rounded-full shadow-lg hover:bg-green-600 transition-colors focus:outline-none focus:ring-4 focus:ring-green-300">
+                    Generate Clause
+                </button>
+                <div id="loading-indicator" class="loading-indicator flex items-center space-x-2">
+                    <div class="spinner"></div>
+                    <span class="text-green-600 font-medium">Generating...</span>
+                </div>
+                <button id="export-btn" class="w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-600 font-bold rounded-full shadow-lg cursor-not-allowed transition-colors focus:outline-none">
+                    Export to DOCX (Pro)
+                </button>
+            </div>
+
+            <!-- Footer for CTA -->
+            <div class="mt-8 text-center text-gray-500 text-sm">
+                <p>Enjoying the app? <a href="#" class="text-green-600 font-bold hover:underline" id="upgrade-cta">Upgrade to a Pro plan for unlimited generations and exports!</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Get DOM elements
+        const promptInput = document.getElementById('clause-prompt');
+        const companyNameInput = document.getElementById('company-name');
+        const clientNameInput = document.getElementById('client-name');
+        const effectiveDateInput = document.getElementById('effective-date');
+        const generateBtn = document.getElementById('generate-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const outputArea = document.getElementById('output-area');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const messageBox = document.getElementById('message-box');
+        const upgradeCta = document.getElementById('upgrade-cta');
+
+        // Define freemium constants
+        const FREE_GENERATION_LIMIT = 3;
+        let generationCount = 0;
+
+        // Function to display messages
+        function showMessage(type, text) {
+            messageBox.textContent = text;
+            messageBox.className = `message-box my-4 p-4 ${type}`;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.opacity = '1';
+            }, 10);
+        }
+
+        // Function to handle the API call with exponential backoff
+        async function fetchWithExponentialBackoff(url, options) {
+            const maxRetries = 5;
+            let retryCount = 0;
+            while (retryCount < maxRetries) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status === 429) { // Too Many Requests
+                        const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
+                        console.warn(`Rate limit hit, retrying in ${delay / 1000}s...`);
+                        retryCount++;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    }
+                    return response;
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    throw error;
+                }
+            }
+            throw new Error('Max retries exceeded.');
+        }
+
+        // Function to handle the generation process
+        async function generateClause() {
+            const promptText = promptInput.value.trim();
+            const companyName = companyNameInput.value.trim();
+            const clientName = clientNameInput.value.trim();
+            const effectiveDate = effectiveDateInput.value;
+
+            if (!promptText) {
+                showMessage('limit', 'Please enter a description for the clause.');
+                return;
+            }
+
+            // Check if the free generation limit is reached
+            if (generationCount >= FREE_GENERATION_LIMIT) {
+                showMessage('limit', `You've reached your limit of ${FREE_GENERATION_LIMIT} free generations. Upgrade to a Pro plan for unlimited use.`);
+                generateBtn.disabled = true;
+                return;
+            }
+
+            // Show loading state
+            generateBtn.disabled = true;
+            loadingIndicator.style.display = 'flex';
+            outputArea.innerHTML = '<p class="text-gray-400">Your generated clause will appear here.</p>'; // Reset output
+            messageBox.style.opacity = '0';
+            messageBox.style.display = 'none';
+
+            try {
+                // Construct the prompt with additional information
+                let fullPrompt = `You are a legal document generator. Your task is to write a professional and concise legal clause based on the user's request. Do not provide legal advice, just the clause text. `;
+
+                if (companyName || clientName || effectiveDate) {
+                    fullPrompt += `Please incorporate the following details into the clause where appropriate: `;
+                    if (companyName) fullPrompt += `Company Name: "${companyName}". `;
+                    if (clientName) fullPrompt += `Client Name: "${clientName}". `;
+                    if (effectiveDate) fullPrompt += `Effective Date: "${effectiveDate}". `;
+                }
+
+                fullPrompt += `The user wants the following clause: ${promptText}`;
+
+                // Construct the payload for the Gemini API call
+                const chatHistory = [{ role: "user", parts: [{ text: fullPrompt }] }];
+
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const response = await fetchWithExponentialBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                // Check for a valid response
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const generatedText = result.candidates[0].content.parts[0].text;
+                    outputArea.textContent = generatedText;
+                    generationCount++;
+
+                    // Update the message box with the remaining generations and legal warning
+                    const remaining = FREE_GENERATION_LIMIT - generationCount;
+                    if (remaining > 0) {
+                        showMessage('pro', `Generation successful! You have ${remaining} generations left. For official use, please consult with an attorney.`);
+                    } else {
+                        showMessage('limit', `This was your last free generation. Upgrade to a Pro plan for unlimited use. For official use, please consult with an attorney.`);
+                        generateBtn.disabled = true;
+                    }
+                } else {
+                    outputArea.textContent = "Error: Could not generate a clause. Please try again.";
+                }
+
+            } catch (error) {
+                console.error("Error generating clause:", error);
+                outputArea.textContent = "An error occurred. Please check the console for details.";
+                showMessage('limit', 'An error occurred during generation. Please try again.');
+            } finally {
+                // Hide loading state
+                loadingIndicator.style.display = 'none';
+                if (generationCount < FREE_GENERATION_LIMIT) {
+                    generateBtn.disabled = false;
+                }
+            }
+        }
+
+        // Event listeners
+        generateBtn.addEventListener('click', generateClause);
+
+        exportBtn.addEventListener('click', () => {
+            showMessage('pro', 'This feature is available on the Pro plan. Upgrade to unlock unlimited exports.');
+        });
+
+        upgradeCta.addEventListener('click', (e) => {
+            e.preventDefault();
+            showMessage('pro', 'Thank you for your interest! This is a prototype and does not have a live payment system. Please imagine clicking through to a pricing page.');
+        });
+    </script>
+</body>
+</html>
